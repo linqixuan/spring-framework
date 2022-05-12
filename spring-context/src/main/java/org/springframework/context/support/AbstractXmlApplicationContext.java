@@ -16,8 +16,6 @@
 
 package org.springframework.context.support;
 
-import java.io.IOException;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.ResourceEntityResolver;
@@ -25,6 +23,8 @@ import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.lang.Nullable;
+
+import java.io.IOException;
 
 /**
  * Convenient base class for {@link org.springframework.context.ApplicationContext}
@@ -80,6 +80,7 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	@Override
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		// Create a new XmlBeanDefinitionReader for the given BeanFactory.
+		// 实例化XmlBeanDefinitionReader
 		XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
 
 		// Configure the bean definition reader with this context's
@@ -90,7 +91,9 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 
 		// Allow a subclass to provide custom initialization of the reader,
 		// then proceed with actually loading the bean definitions.
+		// 初始化 BeanDefinitionReader
 		initBeanDefinitionReader(beanDefinitionReader);
+		// 接着往下看
 		loadBeanDefinitions(beanDefinitionReader);
 	}
 
@@ -119,6 +122,7 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	 * @see #getResourcePatternResolver
 	 */
 	protected void loadBeanDefinitions(XmlBeanDefinitionReader reader) throws BeansException, IOException {
+		// 第一个if是看有没有系统指定的配置文件，如果没有的话就走第二个if加载我们最开始传入的`classpath:application-ioc.xml`
 		Resource[] configResources = getConfigResources();
 		if (configResources != null) {
 			reader.loadBeanDefinitions(configResources);

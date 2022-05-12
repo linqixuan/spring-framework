@@ -16,22 +16,8 @@
 
 package org.springframework.beans.factory.xml;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import org.springframework.beans.BeanMetadataAttribute;
 import org.springframework.beans.BeanMetadataAttributeAccessor;
 import org.springframework.beans.PropertyValue;
@@ -66,6 +52,19 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * Stateful delegate class used to parse XML bean definitions.
@@ -416,12 +415,14 @@ public class BeanDefinitionParserDelegate {
 		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
 
 		List<String> aliases = new ArrayList<>();
+		// 将 name 属性的定义按照 “逗号、分号、空格” 切分，形成一个 别名列表数组，
 		if (StringUtils.hasLength(nameAttr)) {
 			String[] nameArr = StringUtils.tokenizeToStringArray(nameAttr, MULTI_VALUE_ATTRIBUTE_DELIMITERS);
 			aliases.addAll(Arrays.asList(nameArr));
 		}
 
 		String beanName = id;
+		// 如果没有指定id, 那么用别名列表的第一个名字作为beanName
 		if (!StringUtils.hasText(beanName) && !aliases.isEmpty()) {
 			beanName = aliases.remove(0);
 			if (logger.isTraceEnabled()) {
@@ -433,9 +434,12 @@ public class BeanDefinitionParserDelegate {
 		if (containingBean == null) {
 			checkNameUniqueness(beanName, aliases, ele);
 		}
-
+		// 根据 <bean ...>...</bean> 中的配置创建 BeanDefinition，然后把配置中的信息都设置到实例中,
+		// 这行执行完毕，一个 BeanDefinition 实例就出来了。等下接着往下看
 		AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
+		// <bean /> 标签完成
 		if (beanDefinition != null) {
+			// 如果没有设置 id 和 name，那么此时的 beanName 就会为 null
 			if (!StringUtils.hasText(beanName)) {
 				try {
 					if (containingBean != null) {
@@ -451,6 +455,7 @@ public class BeanDefinitionParserDelegate {
 						if (beanClassName != null &&
 								beanName.startsWith(beanClassName) && beanName.length() > beanClassName.length() &&
 								!this.readerContext.getRegistry().isBeanNameInUse(beanClassName)) {
+							// 把 beanClassName 设置为 Bean 的别名
 							aliases.add(beanClassName);
 						}
 					}
@@ -465,6 +470,7 @@ public class BeanDefinitionParserDelegate {
 				}
 			}
 			String[] aliasesArray = StringUtils.toStringArray(aliases);
+			// 返回 BeanDefinitionHolder
 			return new BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);
 		}
 
@@ -512,17 +518,29 @@ public class BeanDefinitionParserDelegate {
 		}
 
 		try {
+			// 创建 BeanDefinition，然后设置类信息
 			AbstractBeanDefinition bd = createBeanDefinition(className, parent);
-
+			// 设置 BeanDefinition 的一堆属性，这些属性定义在 AbstractBeanDefinition 中
 			parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
 			bd.setDescription(DomUtils.getChildElementValueByTagName(ele, DESCRIPTION_ELEMENT));
 
+			/**
+			 * 下面的一堆是解析 <bean>......</bean> 内部的子元素，
+			 * 解析出来以后的信息都放到 bd 的属性中
+			 */
+
+			// 解析 <meta />
 			parseMetaElements(ele, bd);
+			// 解析 <lookup-method />
 			parseLookupOverrideSubElements(ele, bd.getMethodOverrides());
+			// 解析 <replaced-method />
 			parseReplacedMethodSubElements(ele, bd.getMethodOverrides());
 
+			// 解析 <constructor-arg />
 			parseConstructorArgElements(ele, bd);
+			// 解析 <property />
 			parsePropertyElements(ele, bd);
+			// 解析 <qualifier />
 			parseQualifierElements(ele, bd);
 
 			bd.setResource(this.readerContext.getResource());

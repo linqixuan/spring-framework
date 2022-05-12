@@ -78,6 +78,7 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 			Assert.noNullElements(locations, "Config locations must not be null");
 			this.configLocations = new String[locations.length];
 			for (int i = 0; i < locations.length; i++) {
+				// 往下看
 				this.configLocations[i] = resolvePath(locations[i]).trim();
 			}
 		}
@@ -122,6 +123,8 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 	 * @see org.springframework.core.env.Environment#resolveRequiredPlaceholders(String)
 	 */
 	protected String resolvePath(String path) {
+		// getEnvironment() 创建环境变量
+		// resolveRequiredPlaceholders 处理占位符  parseStringValue处理所有使用${}方式的占位符
 		return getEnvironment().resolveRequiredPlaceholders(path);
 	}
 

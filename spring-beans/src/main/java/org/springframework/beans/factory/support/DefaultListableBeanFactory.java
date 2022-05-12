@@ -16,36 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.ObjectInputStream;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-import java.lang.annotation.Annotation;
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
-import javax.inject.Provider;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeConverter;
 import org.springframework.beans.factory.BeanCreationException;
@@ -84,6 +54,35 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CompositeIterator;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import javax.inject.Provider;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Spring's default implementation of the {@link ConfigurableListableBeanFactory}
@@ -939,13 +938,16 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 		}
 
+		// 所有的 Bean 注册后都会被放入到这个beanDefinitionMap 中，查看是否已存在这个bean
 		BeanDefinition existingDefinition = this.beanDefinitionMap.get(beanName);
 		if (existingDefinition != null) {
+			// 如果不允许覆盖的话，抛异常
 			if (!isAllowBeanDefinitionOverriding()) {
 				throw new BeanDefinitionOverrideException(beanName, beanDefinition, existingDefinition);
 			}
 			else if (existingDefinition.getRole() < beanDefinition.getRole()) {
 				// e.g. was ROLE_APPLICATION, now overriding with ROLE_SUPPORT or ROLE_INFRASTRUCTURE
+				// 用框架定义的 Bean 覆盖用户自定义的 Bean
 				if (logger.isInfoEnabled()) {
 					logger.info("Overriding user-defined bean definition for bean '" + beanName +
 							"' with a framework-generated bean definition: replacing [" +
@@ -953,6 +955,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 			else if (!beanDefinition.equals(existingDefinition)) {
+				// 用新的 Bean 覆盖旧的 Bean
 				if (logger.isDebugEnabled()) {
 					logger.debug("Overriding bean definition for bean '" + beanName +
 							"' with a different definition: replacing [" + existingDefinition +
@@ -960,15 +963,18 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 			else {
+				// log...用同等的 Bean 覆盖旧的 Bean
 				if (logger.isTraceEnabled()) {
 					logger.trace("Overriding bean definition for bean '" + beanName +
 							"' with an equivalent definition: replacing [" + existingDefinition +
 							"] with [" + beanDefinition + "]");
 				}
 			}
+			// 覆盖
 			this.beanDefinitionMap.put(beanName, beanDefinition);
 		}
 		else {
+			// 判断是否已经有其他的 Bean 开始初始化了.注意，"注册Bean" 这个动作结束，Bean 依然还没有初始化 在 Spring 容器启动的最后，会预初始化 所有的 singleton beans
 			if (hasBeanCreationStarted()) {
 				// Cannot modify startup-time collection elements anymore (for stable iteration)
 				synchronized (this.beanDefinitionMap) {
@@ -982,8 +988,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 			else {
 				// Still in startup registration phase
+				// 将 BeanDefinition 放到这个 map 中，这个 map 保存了所有的 BeanDefinition
 				this.beanDefinitionMap.put(beanName, beanDefinition);
+				// 这是个 ArrayList，所以会按照 bean 配置的顺序保存每一个注册的 Bean 的名字
 				this.beanDefinitionNames.add(beanName);
+				// 这是个 LinkedHashSet，代表的是手动注册的 singleton bean，
 				removeManualSingletonName(beanName);
 			}
 			this.frozenBeanDefinitionNames = null;

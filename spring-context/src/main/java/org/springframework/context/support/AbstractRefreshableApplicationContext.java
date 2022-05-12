@@ -16,14 +16,14 @@
 
 package org.springframework.context.support;
 
-import java.io.IOException;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.lang.Nullable;
+
+import java.io.IOException;
 
 /**
  * Base class for {@link org.springframework.context.ApplicationContext}
@@ -119,14 +119,22 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
+		// 判断当前ApplicationContext是否存在BeanFactory，如果存在的话就销毁Bean，关闭Factory
+		// 一个应用可以存在多个BeanFactory，这里判断的是当前ApplicationContext是否存在BeanFactory
 		if (hasBeanFactory()) {
 			destroyBeans();
 			closeBeanFactory();
 		}
 		try {
+			// 初始化DefaultListableBeanFactory
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
 			beanFactory.setSerializationId(getId());
+			// 设置BeanFactory的两个配置属性： 是否允许Bean覆盖，是否允许循环引用
 			customizeBeanFactory(beanFactory);
+			// 加载BeanDefinition到BeanFactory中
+			// BeanDefinition就是Bean的一
+			// 种形式（它里面包含了Bean指向的类、是否单例、是否懒加载、Bean的依赖关系等相关的属性）。BeanFactory中就是保存的BeanDefinition。
+			// org.springframework.context.support.AbstractXmlApplicationContext.loadBeanDefinitions(org.springframework.beans.factory.support.DefaultListableBeanFactory)
 			loadBeanDefinitions(beanFactory);
 			this.beanFactory = beanFactory;
 		}

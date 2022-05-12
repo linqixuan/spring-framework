@@ -16,16 +16,15 @@
 
 package org.springframework.util;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.lang.Nullable;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.lang.Nullable;
 
 /**
  * Utility class for working with Strings that have placeholder values in them.
@@ -128,7 +127,7 @@ public class PropertyPlaceholderHelper {
 
 	protected String parseStringValue(
 			String value, PlaceholderResolver placeholderResolver, @Nullable Set<String> visitedPlaceholders) {
-
+		// 开始处理使用${}方式的占位符 等
 		int startIndex = value.indexOf(this.placeholderPrefix);
 		if (startIndex == -1) {
 			return value;
