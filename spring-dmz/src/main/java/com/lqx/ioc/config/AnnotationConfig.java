@@ -1,7 +1,9 @@
 package com.lqx.ioc.config;
 
+import com.lqx.ioc.service.IocServiceImpl;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Import;
 
 /**
  * @author linqx
@@ -9,6 +11,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  */
 @EnableAspectJAutoProxy
 @Configuration
+@Import(IocServiceImpl.class)
 public class AnnotationConfig {
 
 //	@Bean

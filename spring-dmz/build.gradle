@@ -10,8 +10,12 @@ repositories {
 }
 
 dependencies {
-//    compile(project(":spring-aop"))
+    compile(project(":spring-aop"))
     compile(project(":spring-context"))
-//    optional("org.aspectj:aspectjweaver")
+    compile(project(":spring-jdbc"))
+    optional("org.aspectj:aspectjrt")
+    optional("org.aspectj:aspectjweaver")
+    optional("mysql:mysql-connector-java")
+    optional("com.alibaba:druid")
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

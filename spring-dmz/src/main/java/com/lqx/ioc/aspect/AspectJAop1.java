@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AspectJAop1 {
 
-//	@Pointcut("execution(public * com.lqx.ioc.service.IocService.hello(..))")
-	@Pointcut("execution(public * com.lqx.ioc.config..*(..))")
+	@Pointcut("execution(public * com.lqx.ioc.service.IocService.hello(..))")
+//	@Pointcut("execution(public * com.lqx.ioc.config..*(..))")
 	public void testAOP(){}
 
 	@Before("testAOP()")

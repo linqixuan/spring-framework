@@ -16,15 +16,15 @@
 
 package org.springframework.web.servlet.mvc;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import org.springframework.http.HttpMethod;
 import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.support.WebContentGenerator;
 import org.springframework.web.util.WebUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * Convenient superclass for controller implementations, using the Template Method
@@ -164,6 +164,7 @@ public abstract class AbstractController extends WebContentGenerator implements 
 		prepareResponse(response);
 
 		// Execute handleRequestInternal in synchronized block if required.
+		// 如果需要同步session
 		if (this.synchronizeOnSession) {
 			HttpSession session = request.getSession(false);
 			if (session != null) {
@@ -174,6 +175,7 @@ public abstract class AbstractController extends WebContentGenerator implements 
 			}
 		}
 
+		// 调用Controller方法
 		return handleRequestInternal(request, response);
 	}
 
