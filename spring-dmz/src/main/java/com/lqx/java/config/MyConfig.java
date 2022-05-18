@@ -1,6 +1,8 @@
 package com.lqx.java.config;
 
+import com.lqx.java.config.postprocessor.TestBeanDefinitionRegistryPostProcessorPriorityOrdered;
 import com.lqx.java.config.registrar.MyImportBeanDefinitionRegistrar;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
@@ -24,5 +26,10 @@ public class MyConfig {
 //	class T2 {
 //
 //	}
+
+	@Bean
+	public static TestBeanDefinitionRegistryPostProcessorPriorityOrdered myRegistrar(){
+		return  new TestBeanDefinitionRegistryPostProcessorPriorityOrdered();
+	}
 
 }

@@ -1,6 +1,5 @@
 package com.lqx.java.config;
 
-import com.lqx.java.config.postprocessor.TestBeanDefinitionRegistryPostProcessor;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
@@ -15,10 +14,10 @@ public class AnnotationContextMain {
 
 	@Test
 	public void beanDefinitionRegistryPostProcessorTest0() {
-		AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
-		applicationContext.register(MyConfig.class);
-		applicationContext.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessor());
-		applicationContext.refresh();
+		AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(MyConfig.class);
+//		applicationContext.register(MyConfig.class);
+//		applicationContext.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessor());
+//		applicationContext.refresh();
 	}
 
 }

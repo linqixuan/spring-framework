@@ -1,6 +1,7 @@
 package com.lqx.java.config.postprocessor;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -21,6 +22,7 @@ public class TestBeanDefinitionRegistryPostProcessorPriorityOrdered implements B
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 		System.out.println("MyBeanDefinitionRegistryPostProcessorPriorityOrdered postProcessBeanDefinitionRegistry");
+		registry.registerBeanDefinition("TestBeanDefinitionRegistryPostProcessor", new AnnotatedGenericBeanDefinition(TestBeanDefinitionRegistryPostProcessor.class));
 	}
 
 	@Override

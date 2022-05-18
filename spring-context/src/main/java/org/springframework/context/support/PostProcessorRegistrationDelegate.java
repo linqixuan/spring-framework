@@ -108,32 +108,39 @@ final class PostProcessorRegistrationDelegate {
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			// 合并自定义的和spring内部的
 			registryProcessors.addAll(currentRegistryProcessors);
-			// 处理bean定义注册后置处理器
+			// 处理bean定义注册后置处理器 ConfigurationClassPostProcessor在这里被调用
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
+			// 再次获取没处理过的BeanDefinitionRegistryPostProcessors且实现Ordered接口的来处理，因为可能前面处理后产生新的bean定义
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
+				// 没处理过的，而且是Ordered类型的
 				if (!processedBeans.contains(ppName) && beanFactory.isTypeMatch(ppName, Ordered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
 				}
 			}
+			// 跟前面一样，排序，合并，处理，清除
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
 			// Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
+			// 是否还有要处理的
 			boolean reiterate = true;
 			while (reiterate) {
+				// 默认没有了
 				reiterate = false;
 				postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 				for (String ppName : postProcessorNames) {
+					// 剩下没处理过的
 					if (!processedBeans.contains(ppName)) {
 						currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 						processedBeans.add(ppName);
+						// 还有
 						reiterate = true;
 					}
 				}
@@ -144,7 +151,10 @@ final class PostProcessorRegistrationDelegate {
 			}
 
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.
+			// BeanDefinitionRegistryPostProcessor的 主要就是ConfigurationClassPostProcessor的postProcessBeanFactory，
+			// 还有就是自定义的，我们主要关注ConfigurationClassPostProcessor的
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
+			// 自定义的BeanFactoryPostProcessor
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
 

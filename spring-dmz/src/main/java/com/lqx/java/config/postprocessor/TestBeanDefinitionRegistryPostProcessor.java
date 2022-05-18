@@ -1,5 +1,6 @@
 package com.lqx.java.config.postprocessor;
 
+import com.lqx.java.config.dao.UserDaoImple;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -22,6 +23,6 @@ public class TestBeanDefinitionRegistryPostProcessor implements BeanDefinitionRe
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 		System.out.println("MyBeanDefinitionRegistryPostProcessor postProcessBeanFactory");
-		registry.registerBeanDefinition("mytest", new AnnotatedGenericBeanDefinition(TestBeanDefinitionRegistryPostProcessorPriorityOrdered.class));
+		registry.registerBeanDefinition("UserDaoImple",new AnnotatedGenericBeanDefinition(UserDaoImple.class));
 	}
 }
