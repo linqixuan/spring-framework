@@ -491,6 +491,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Override
 	public String[] getBeanNamesForType(@Nullable Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
 		if (!isConfigurationFrozen() || type == null || !allowEagerInit) {
+			// 一部分是从定义的bean名字列表中查找，另一部分是从预处理注册的单例中查找.
+			// 这里如果没有扩展的话，就是获取org.springframework.context.annotation.internalConfigurationAnnotationProcessor，
+			// 对应的类就是ConfigurationClassPostProcessor。
 			return doGetBeanNamesForType(ResolvableType.forRawClass(type), includeNonSingletons, allowEagerInit);
 		}
 		Map<Class<?>, String[]> cache =

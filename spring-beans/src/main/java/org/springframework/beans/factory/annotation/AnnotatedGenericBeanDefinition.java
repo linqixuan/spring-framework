@@ -24,6 +24,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
+ * 将通用bean定义GenericBeanDefinition和注解bean定义AnnotatedBeanDefinition拼起来了。
  * Extension of the {@link org.springframework.beans.factory.support.GenericBeanDefinition}
  * class, adding support for annotation metadata exposed through the
  * {@link AnnotatedBeanDefinition} interface.
@@ -43,13 +44,16 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class AnnotatedGenericBeanDefinition extends GenericBeanDefinition implements AnnotatedBeanDefinition {
 
+	/** 注解元数据 */
 	private final AnnotationMetadata metadata;
 
+	/** 工厂方法源数据 */
 	@Nullable
 	private MethodMetadata factoryMethodMetadata;
 
 
 	/**
+	 * 通过beanClass来获取元数据
 	 * Create a new AnnotatedGenericBeanDefinition for the given bean class.
 	 * @param beanClass the loaded bean class
 	 */
@@ -59,6 +63,7 @@ public class AnnotatedGenericBeanDefinition extends GenericBeanDefinition implem
 	}
 
 	/**
+	 * 通过注解元数据来获取beanClass
 	 * Create a new AnnotatedGenericBeanDefinition for the given annotation metadata,
 	 * allowing for ASM-based processing and avoidance of early loading of the bean class.
 	 * Note that this constructor is functionally equivalent to
@@ -80,6 +85,7 @@ public class AnnotatedGenericBeanDefinition extends GenericBeanDefinition implem
 	}
 
 	/**
+	 * 通过注解元数据和方法元数据创建
 	 * Create a new AnnotatedGenericBeanDefinition for the given annotation metadata,
 	 * based on an annotated class and a factory method on that class.
 	 * @param metadata the annotation metadata for the bean class in question

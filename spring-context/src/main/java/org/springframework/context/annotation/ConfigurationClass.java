@@ -16,12 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.springframework.beans.factory.parsing.Location;
 import org.springframework.beans.factory.parsing.Problem;
 import org.springframework.beans.factory.parsing.ProblemReporter;
@@ -33,6 +27,12 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a user-defined {@link Configuration @Configuration} class.
@@ -48,23 +48,30 @@ import org.springframework.util.ClassUtils;
  */
 final class ConfigurationClass {
 
+	/** 注解元数据 */
 	private final AnnotationMetadata metadata;
 
+	/** URL资源 */
 	private final Resource resource;
 
 	@Nullable
 	private String beanName;
 
+	/** 是import注解的 */
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
+	/** bean注解的方法 */
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
 
+	/** processConfigurationClass映射 */
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
 
+	/** ImportBeanDefinitionRegistrar映射 */
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 
+	/** 要忽略的bean方法 */
 	final Set<String> skippedBeanMethods = new HashSet<>();
 
 
@@ -211,12 +218,16 @@ final class ConfigurationClass {
 
 	public void validate(ProblemReporter problemReporter) {
 		// A configuration class may not be final (CGLIB limitation) unless it declares proxyBeanMethods=false
+		// 进行验证，如果是proxyBeanMethods=true，默认用GCLIB做代理，是继承的，所以不可以是final类
 		Map<String, Object> attributes = this.metadata.getAnnotationAttributes(Configuration.class.getName());
+		// 要GCLIB代理
 		if (attributes != null && (Boolean) attributes.get("proxyBeanMethods")) {
+			// 配置类不可以是final的
 			if (this.metadata.isFinal()) {
 				problemReporter.error(new FinalConfigurationProblem());
 			}
 			for (BeanMethod beanMethod : this.beanMethods) {
+				// 验证方法可覆盖
 				beanMethod.validate(problemReporter);
 			}
 		}

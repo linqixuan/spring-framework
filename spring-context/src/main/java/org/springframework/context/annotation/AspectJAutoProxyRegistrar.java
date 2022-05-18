@@ -34,6 +34,10 @@ import org.springframework.core.type.AnnotationMetadata;
 class AspectJAutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 
 	/**
+	 * 在调用invokeBeanFactoryPostProcessors(beanFactory)的时候，会进入调用ImportBeanDefinitionRegistrar接口，从而进入AspectJAutoProxyRegistrar调用registerBeanDefinitions:
+	 * ————————————————
+	 * 版权声明：本文为CSDN博主「王伟王胖胖」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+	 * 原文链接：https://blog.csdn.net/wangwei19871103/article/details/103520388
 	 * Register, escalate, and configure the AspectJ auto proxy creator based on the value
 	 * of the @{@link EnableAspectJAutoProxy#proxyTargetClass()} attribute on the importing
 	 * {@code @Configuration} class.
@@ -41,7 +45,7 @@ class AspectJAutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 	@Override
 	public void registerBeanDefinitions(
 			AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-		// 注册一个AOP代理实现的Bean
+		// 注册一个AOP代理实现的Bean 会定义AspectJAwareAdvisorAutoProxyCreator
 		AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry);
 
 		AnnotationAttributes enableAspectJAutoProxy =

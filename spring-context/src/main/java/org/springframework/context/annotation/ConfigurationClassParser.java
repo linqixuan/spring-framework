@@ -169,7 +169,9 @@ class ConfigurationClassParser {
 	public void parse(Set<BeanDefinitionHolder> configCandidates) {
 		for (BeanDefinitionHolder holder : configCandidates) {
 			BeanDefinition bd = holder.getBeanDefinition();
+			// parse 内部都是封装成ConfigurationClass对象
 			try {
+				// 注解类型
 				if (bd instanceof AnnotatedBeanDefinition) {
 					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
 				}
@@ -177,6 +179,7 @@ class ConfigurationClassParser {
 					parse(((AbstractBeanDefinition) bd).getBeanClass(), holder.getBeanName());
 				}
 				else {
+					// 一般的，只有name
 					parse(bd.getBeanClassName(), holder.getBeanName());
 				}
 			}
@@ -189,20 +192,24 @@ class ConfigurationClassParser {
 			}
 		}
 
+		// 处理延迟导入
 		this.deferredImportSelectorHandler.process();
 	}
 
 	protected final void parse(@Nullable String className, String beanName) throws IOException {
 		Assert.notNull(className, "No bean class name for configuration class bean definition");
 		MetadataReader reader = this.metadataReaderFactory.getMetadataReader(className);
+		// 根据className和beanName解析配置文件，需要去URL加载字节码，所以有读取元数据
 		processConfigurationClass(new ConfigurationClass(reader, beanName), DEFAULT_EXCLUSION_FILTER);
 	}
 
 	protected final void parse(Class<?> clazz, String beanName) throws IOException {
+		// 根据Class和beanName解析配置文件，有Class对象
 		processConfigurationClass(new ConfigurationClass(clazz, beanName), DEFAULT_EXCLUSION_FILTER);
 	}
 
 	protected final void parse(AnnotationMetadata metadata, String beanName) throws IOException {
+		// 根据注解元数据和beanName解析配置文件，有注解元数据
 		processConfigurationClass(new ConfigurationClass(metadata, beanName), DEFAULT_EXCLUSION_FILTER);
 	}
 
@@ -222,7 +229,11 @@ class ConfigurationClassParser {
 
 
 	protected void processConfigurationClass(ConfigurationClass configClass, Predicate<String> filter) throws IOException {
+		// ConfigurationClass 里面存放着配置相关的注解元数据，被哪个ConfigurationClassimport进来的集合importedBy，
+		// bean注解方法信息，ImportBeanDefinitionRegistrar接口信息等，
+		// 其实就是来描述配置类的，把我们自定义的配置类解析成ConfigurationClass配置类
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
+			// 有条件注解不满足的返回
 			return;
 		}
 
@@ -230,6 +241,7 @@ class ConfigurationClassParser {
 		if (existingClass != null) {
 			// 在这里处理Configuration重复import
 			// 如果同一个配置类被处理两次，两次都属于被import的则合并导入类，返回。如果配置类不是被导入的，则移除旧使用新的配置类
+			// 如果老的和新的都是import的，就合并
 			if (configClass.isImported()) {
 				if (existingClass.isImported()) {
 					existingClass.mergeImportedBy(configClass);
@@ -240,17 +252,20 @@ class ConfigurationClassParser {
 			else {
 				// Explicit bean definition found, probably replacing an import.
 				// Let's remove the old one and go with the new one.
+				// 删除老的
 				this.configurationClasses.remove(configClass);
 				this.knownSuperclasses.values().removeIf(configClass::equals);
 			}
 		}
 
 		// Recursively process the configuration class and its superclass hierarchy.
+		// 获取configClass源类，包装原始的类和元数据
 		SourceClass sourceClass = asSourceClass(configClass, filter);
 		do {
 			// 接着往下看吧
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass, filter);
 		}
+		// 处理配置类，如果有父类(不是java开头的类)，继续处理，直到没有父类为止
 		while (sourceClass != null);
 
 		this.configurationClasses.put(configClass, configClass);
@@ -270,8 +285,13 @@ class ConfigurationClassParser {
 			throws IOException {
 
 		// 处理递归类
+
+		// 是否注解了Component
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
+			// 获取内部类，如果存在就把候选配置类取出来，然后进行解析，
+			// 这里有个关键栈importStack，他会存放要解析的内部类，防止内部类之间循环import。
+			// 比如A，B两个内部类，A有import注解，导入的是B，同样B有import注解，导入的是A，这样如果在处理的时候发现存在A了，那就说明是循环import了
 			processMemberClasses(configClass, sourceClass, filter);
 		}
 
@@ -290,7 +310,7 @@ class ConfigurationClassParser {
 		}
 
 		// Process any @ComponentScan annotations
-		// 处理 @ComponentScan 注解
+		// 处理 @ComponentScan 注解 然后解析成bean定义，最后递归处理配置类，具体细节后面会说。
 		Set<AnnotationAttributes> componentScans = AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), ComponentScans.class, ComponentScan.class);
 		if (!componentScans.isEmpty() &&
@@ -342,6 +362,7 @@ class ConfigurationClassParser {
 		processInterfaces(configClass, sourceClass);
 
 		// Process superclass, if any
+		// 因为有可能父类还有注解定义，所以要寻找父类，直到Java开头的父类，也就是要递归处理自定义的父类，把父类返回，然后外面继续处理父类。
 		if (sourceClass.getMetadata().hasSuperClass()) {
 			String superclass = sourceClass.getMetadata().getSuperClassName();
 			if (superclass != null && !superclass.startsWith("java") &&

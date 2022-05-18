@@ -39,12 +39,15 @@ final class BeanMethod extends ConfigurationMethod {
 
 	@Override
 	public void validate(ProblemReporter problemReporter) {
+		// 验证bean注解的方法，如果是静态的，就没关系，立即返回，否则的话要判断是否可以覆盖。
 		if (getMetadata().isStatic()) {
 			// static @Bean methods have no constraints to validate -> return immediately
 			return;
 		}
 
 		if (this.configurationClass.getMetadata().isAnnotated(Configuration.class.getName())) {
+			// 不能覆盖的话，也报错，因为不能GCLIB覆盖啦
+			// 可以覆盖的条件，非静态且非final且不是私有的
 			if (!getMetadata().isOverridable()) {
 				// instance @Bean methods within @Configuration classes must be overridable to accommodate CGLIB
 				problemReporter.error(new NonOverridableMethodError());

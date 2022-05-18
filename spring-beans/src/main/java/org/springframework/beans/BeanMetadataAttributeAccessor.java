@@ -30,6 +30,7 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("serial")
 public class BeanMetadataAttributeAccessor extends AttributeAccessorSupport implements BeanMetadataElement {
 
+	/** bean的源数据对象 */
 	@Nullable
 	private Object source;
 
@@ -50,6 +51,7 @@ public class BeanMetadataAttributeAccessor extends AttributeAccessorSupport impl
 
 
 	/**
+	 * //添加进来的就是BeanMetadataAttribute
 	 * Add the given BeanMetadataAttribute to this accessor's set of attributes.
 	 * @param attribute the BeanMetadataAttribute object to register
 	 */
@@ -58,6 +60,7 @@ public class BeanMetadataAttributeAccessor extends AttributeAccessorSupport impl
 	}
 
 	/**
+	 * 获得之后都会转成BeanMetadataAttribute
 	 * Look up the given BeanMetadataAttribute in this accessor's set of attributes.
 	 * @param name the name of the attribute
 	 * @return the corresponding BeanMetadataAttribute object,
@@ -68,6 +71,7 @@ public class BeanMetadataAttributeAccessor extends AttributeAccessorSupport impl
 		return (BeanMetadataAttribute) super.getAttribute(name);
 	}
 
+	/** 封装成BeanMetadataAttribute */
 	@Override
 	public void setAttribute(String name, @Nullable Object value) {
 		super.setAttribute(name, new BeanMetadataAttribute(name, value));

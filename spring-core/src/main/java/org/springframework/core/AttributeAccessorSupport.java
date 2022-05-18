@@ -16,13 +16,13 @@
 
 package org.springframework.core;
 
-import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Support class for {@link AttributeAccessor AttributeAccessors}, providing
@@ -37,10 +37,11 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("serial")
 public abstract class AttributeAccessorSupport implements AttributeAccessor, Serializable {
 
-	/** Map with String keys and Object values. */
+	/** 名字和属性的对应 Map with String keys and Object values. */
 	private final Map<String, Object> attributes = new LinkedHashMap<>();
 
 
+	/** 设置null就会删除 */
 	@Override
 	public void setAttribute(String name, @Nullable Object value) {
 		Assert.notNull(name, "Name must not be null");
@@ -79,6 +80,7 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor, Ser
 
 
 	/**
+	 * 属性复制
 	 * Copy the attributes from the supplied AttributeAccessor to this accessor.
 	 * @param source the AttributeAccessor to copy from
 	 */
@@ -90,7 +92,7 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor, Ser
 		}
 	}
 
-
+ 	/** 得同一个属性对象，或者每一个属性都相同 */
 	@Override
 	public boolean equals(@Nullable Object other) {
 		return (this == other || (other instanceof AttributeAccessorSupport &&

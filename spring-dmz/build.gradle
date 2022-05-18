@@ -10,6 +10,7 @@ repositories {
 }
 
 dependencies {
+
     compile(project(":spring-aop"))
     compile(project(":spring-context"))
     compile(project(":spring-jdbc"))
@@ -17,5 +18,7 @@ dependencies {
     optional("org.aspectj:aspectjweaver")
     optional("mysql:mysql-connector-java")
     optional("com.alibaba:druid")
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    optional('junit:junit')
+    optional("org.hamcrest:hamcrest")
+//    testCompile group: 'junit', name: 'junit', version: '4.12'
 }

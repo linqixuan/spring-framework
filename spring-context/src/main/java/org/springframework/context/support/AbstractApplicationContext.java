@@ -519,15 +519,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// 避免 refresh() 还没结束，再次发起启动或者销毁容器引起的冲突
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
-			// 做一些准备工作，记录容器的启动时间，标记“已启动”状态，检查环境变量等。
+			// 做一些准备工作，记录容器的启动时间，标记“已启动”状态，检查环境变量等。 刷新前预处理
+			// 设置一些参数和监听器。
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
-			// BeanFactory的初始化，Bean的加载和注册等事件
+			// BeanFactory的初始化，Bean的加载和注册等事件  获取BeanFactory
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
-			// 设置BeanFactory的类加载器、添加几个 BeanPostProcessor、手动注册几个特殊的bean
+			// 设置BeanFactory的类加载器、添加几个 BeanPostProcessor、手动注册几个特殊的bean BeanFactory预准备，属性赋值
 			prepareBeanFactory(beanFactory);
 
 			try {
@@ -539,6 +540,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Invoke factory processors registered as beans in the context.
 				// 调用BeanFactoryPostProcessor各个实现类的postProcessBeanFactory(factory) 方法
+				// 开始要执行后置处理器，来处理我们的bean定义
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
@@ -659,6 +661,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
 		// 核心 org.springframework.context.support.AbstractRefreshableApplicationContext.refreshBeanFactory
+		// 原子操作，支持单线程刷新，设置一个序列化ID。 org.springframework.context.support.GenericApplicationContext.refreshBeanFactory
 		refreshBeanFactory();
 		// 返回刚刚创建的BeanFactory
 		return getBeanFactory();
@@ -682,6 +685,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// 在所有实现了Aware接口的bean在初始化的时候，这个 processor负责回调，
 		// 这个我们很常用，如我们会为了获取 ApplicationContext 而 implement ApplicationContextAware
 		// 注意：它不仅仅回调 ApplicationContextAware，还会负责回调 EnvironmentAware、ResourceLoaderAware 等
+		// 第一个后置处理器
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 
 		// 下面几行的意思就是，如果某个 bean 依赖于以下几个接口的实现类，在自动装配的时候忽略它们，Spring 会通过其他方式来处理这些依赖。

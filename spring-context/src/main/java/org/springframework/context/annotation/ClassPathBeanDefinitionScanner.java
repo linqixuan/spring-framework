@@ -36,6 +36,10 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
+ * 这个就是来扫描我们注解，比如@Component，@Repository，@Service，@Controller，
+ * 或者java扩展的javax.annotation.ManagedBean和javax.inject.Named，
+ * 当然创建的时候他没有干什么事，只是做了一些基本的配置，比如注册过滤器，比如能过滤@Component注解，
+ * 然后设置ResourceLoader，创建元数据缓存CachingMetadataReaderFactory
  * A bean definition scanner that detects bean candidates on the classpath,
  * registering corresponding bean definitions with a given registry ({@code BeanFactory}
  * or {@code ApplicationContext}).
@@ -162,10 +166,13 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		this.registry = registry;
 
+		// 是否使用默认过滤器
 		if (useDefaultFilters) {
 			registerDefaultFilters();
 		}
 		setEnvironment(environment);
+		// 创建了ResourcePatternResolver，用来解析URL资源，创建了CachingMetadataReaderFactory，用来做字节码文件元数据的缓存，
+		// 创建了CandidateComponentsIndex，spring内部定义的组件，在META-INF/spring.components里，貌似现在还没用到
 		setResourceLoader(resourceLoader);
 	}
 

@@ -16,9 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.annotation.Annotation;
-import java.util.function.Supplier;
-
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
@@ -32,6 +29,9 @@ import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+
+import java.lang.annotation.Annotation;
+import java.util.function.Supplier;
 
 /**
  * Convenient adapter for programmatic registration of bean classes.
@@ -50,10 +50,13 @@ public class AnnotatedBeanDefinitionReader {
 
 	private final BeanDefinitionRegistry registry;
 
+	/** bean的名字生成器BeanNameGenerator，可以自定义怎么生成，默认是简单类名首字母小写 */
 	private BeanNameGenerator beanNameGenerator = AnnotationBeanNameGenerator.INSTANCE;
 
+	/** 范围注解的解析器ScopeMetadataResolver，解析出范围，是单例，还是原型 */
 	private ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
 
+	/** 条件评估器了ConditionEvaluator */
 	private ConditionEvaluator conditionEvaluator;
 
 
@@ -68,6 +71,9 @@ public class AnnotatedBeanDefinitionReader {
 	 * @see #setEnvironment(Environment)
 	 */
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
+		// 记得查看成员字段
+		// getOrCreateEnvironment(registry),如果BeanDefinitionRegistry是EnvironmentCapable的话就可以直接获取，
+		// 否则就创建一个标准环境，其实就是获取一些系统的变量。比如可以配置dev环境，test环境，online环境等等。
 		this(registry, getOrCreateEnvironment(registry));
 	}
 
@@ -84,6 +90,8 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
+		// 把environment封装进了ConditionEvaluator，ConditionEvaluator可以理解成一个条件过滤器，
+		// 与@Conditional有关，如果有了这个注解，就先判断条件成不成立，不成立的话有些操作就不做了。
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
@@ -133,6 +141,10 @@ public class AnnotatedBeanDefinitionReader {
 	 * e.g. {@link Configuration @Configuration} classes
 	 */
 	public void register(Class<?>... componentClasses) {
+		// 首先根据配置类创建一个注解通用bean定义AnnotatedGenericBeanDefinition ，
+		// 然后进行条件判断，从bean定义解析范围，并设置范围，然后获得bean的名字，处理通用注解，比如@Lazy，@Primary，@DependsOn等。
+		// 如果有自定义BeanDefinitionCustomizer的话，就会进行回调。最后将bean名字和bean定义封装成BeanDefinitionHolder，方便处理，
+		// 同时会根据注解的代理信息看是否要进行代理，最后注册到注册器里
 		for (Class<?> componentClass : componentClasses) {
 			registerBean(componentClass);
 		}
@@ -255,11 +267,15 @@ public class AnnotatedBeanDefinitionReader {
 			return;
 		}
 
+		// 设置bean创建的回调
 		abd.setInstanceSupplier(supplier);
+		// 解析范围元数据
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
+		// 设置范围
 		abd.setScope(scopeMetadata.getScopeName());
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
 
+		// 处理通用注解Lazy Primary DependsOn Role Description
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
 		if (qualifiers != null) {
 			for (Class<? extends Annotation> qualifier : qualifiers) {
@@ -274,12 +290,14 @@ public class AnnotatedBeanDefinitionReader {
 				}
 			}
 		}
+		// 对bean定义可以自定义一些操作
 		if (customizers != null) {
 			for (BeanDefinitionCustomizer customizer : customizers) {
 				customizer.customize(abd);
 			}
 		}
 
+		// 封装成BeanDefinitionHolder
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
