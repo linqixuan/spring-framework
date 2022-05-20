@@ -90,10 +90,12 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 	protected List<Advisor> findCandidateAdvisors() {
 		// Add all the Spring advisors found according to superclass rules.
 		// 调用父类的方法加载配置文件中的AOP声明（注解与XML都存在的时候）
+		// 首先会调用BeanFactoryAdvisorRetrievalHelper来寻找是否有Advisor的bean定义。
 		List<Advisor> advisors = super.findCandidateAdvisors();
 		// Build Advisors for all AspectJ aspects in the bean factory.
 		// buildAspectJAdvisors是重点
 		if (this.aspectJAdvisorsBuilder != null) {
+			// 是寻找Aspect注解的切面对象，然后解析他的方法，通过注解来生成对应的通知器Advisor。
 			advisors.addAll(this.aspectJAdvisorsBuilder.buildAspectJAdvisors());
 		}
 		return advisors;
@@ -109,6 +111,8 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 		// proxied by that interface and fail at runtime as the advice method is not
 		// defined on the interface. We could potentially relax the restriction about
 		// not advising aspects in the future.
+		// AbstractAspectJAdvisorFactory的isAspect是否有Aspect注解
+		// 主要是看是否有Aspect注解，还有就是没有ajc$开头的属性名。
 		return (super.isInfrastructureClass(beanClass) ||
 				(this.aspectJAdvisorFactory != null && this.aspectJAdvisorFactory.isAspect(beanClass)));
 	}

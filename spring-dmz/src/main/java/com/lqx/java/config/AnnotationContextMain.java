@@ -1,7 +1,6 @@
 package com.lqx.java.config;
 
 import com.lqx.java.config.dao.UserDao;
-import com.lqx.java.config.dao.UserDaoImple2;
 import com.lqx.java.config.factorybean.TestFactoryBean;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -39,20 +38,20 @@ public class AnnotationContextMain {
 		System.out.println(objFactory);
 	}
 
-	@Test
-	public void instanceSupplierTest0()  {
-		AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
-		applicationContext.register(MyConfig.class);
-		applicationContext.registerBean("userDao",UserDao.class,() -> {
-			System.out.println("UserDao自定义提供器");
-			return new UserDaoImple2();
-		},null);
-		applicationContext.refresh();
-		UserDao userDao = (UserDao)applicationContext.getBean("userDao");
-		System.out.println(userDao);
-		userDao = (UserDao)applicationContext.getBean("userDao");
-		System.out.println(userDao);
-	}
+//	@Test
+//	public void instanceSupplierTest0()  {
+//		AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
+//		applicationContext.register(MyConfig.class);
+//		applicationContext.registerBean("userDao",UserDao.class,() -> {
+//			System.out.println("UserDao自定义提供器");
+//			return new UserDaoImple2();
+//		},null);
+//		applicationContext.refresh();
+//		UserDao userDao = (UserDao)applicationContext.getBean("userDao");
+//		System.out.println(userDao);
+//		userDao = (UserDao)applicationContext.getBean("userDao");
+//		System.out.println(userDao);
+//	}
 
 
 }

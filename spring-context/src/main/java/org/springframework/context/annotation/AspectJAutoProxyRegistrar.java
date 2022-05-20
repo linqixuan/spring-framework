@@ -22,6 +22,7 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 
 /**
+ * 就是个ImportBeanDefinitionRegistrar扩展，前面我们有讲过，可以注册一个bean定义。
  * Registers an {@link org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator
  * AnnotationAwareAspectJAutoProxyCreator} against the current {@link BeanDefinitionRegistry}
  * as appropriate based on a given @{@link EnableAspectJAutoProxy} annotation.

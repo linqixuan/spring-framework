@@ -80,14 +80,17 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 	 * @see #isEligibleBean
 	 */
 	public List<Advisor> buildAspectJAdvisors() {
-		// 所有Aspect类的名称集合
+		// 所有Aspect类的名称集合 获取切面名字列表
 		List<String> aspectNames = this.aspectBeanNames;
 
+		// 只找一次
 		if (aspectNames == null) {
+			// 双重检查
 			synchronized (this) {
 				aspectNames = this.aspectBeanNames;
 				// 双重检查
 				if (aspectNames == null) {
+					// 通知集合
 					List<Advisor> advisors = new ArrayList<>();
 					aspectNames = new ArrayList<>();
 					// 获取所有Bean名称

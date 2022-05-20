@@ -246,11 +246,15 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		Object cacheKey = getCacheKey(beanClass, beanName);
 
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
+			// 查缓存，是否有处理过了，不管是不是需要通知增强的，只要处理过了就会放里面
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
-			// 加载所有增强
+			// 加载所有增强 AbstractAutoProxyCreator.isInfrastructureClass是否是内部基础类
+			// AspectJAwareAdvisorAutoProxyCreator的shouldSkip这个是关键
+			// 这个方法是找出Aspect切面和解析通知器的方法，通知器Advisor里面有通知Advice实例。
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
+				// 要跳过的直接设置FALSE
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
 			}
@@ -379,6 +383,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @see #shouldSkip
 	 */
 	protected boolean isInfrastructureClass(Class<?> beanClass) {
+
+		// 主要看bean的类型是不是内部的类型，比如Advice，Pointcut，Advisor，AopInfrastructureBean这些是跟AOP相关的，所以不应该被处理。
 		boolean retVal = Advice.class.isAssignableFrom(beanClass) ||
 				Pointcut.class.isAssignableFrom(beanClass) ||
 				Advisor.class.isAssignableFrom(beanClass) ||
