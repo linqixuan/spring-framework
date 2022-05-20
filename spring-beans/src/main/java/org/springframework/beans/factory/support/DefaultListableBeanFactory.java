@@ -868,24 +868,37 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			logger.trace("Pre-instantiating singletons in " + this);
 		}
 
+		// 首先会获取所有的beanDefinitionNames，然后创建一个副本，避免在使用的时候有改变。
+		// 然后遍历bean名字，如果非抽象，非懒加载的单例实例，
+		// 如果是FactoryBean的话，就获取FactoryBean实例，
+		// 如果获取到了这个实例，就判断是否需要立即加载FactoryBean中创建的实例，默认是不创建的，需要的时候创建。
+		// 这里要注意获取FactoryBean自身的名字是beanName前面加&符号，
+		// 如果是获取FactoryBean创建的实例，名字就是beanName。如果不是FactoryBean类型的，就直接去获取
+
 		// Iterate over a copy to allow for init methods which in turn register new bean definitions.
 		// While this may not be part of the regular factory bootstrap, it does otherwise work fine.
 		// this.beanDefinitionNames 保存了所有的 beanNames
+		// 创建一个副本，让原始的还能继续注册bean定义
 		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
 
 		// Trigger initialization of all non-lazy singleton beans...
+		// 触发非懒加载的单例bean初始化
 		for (String beanName : beanNames) {
 			// 合并父 Bean 中的配置，主意<bean id="" class="" parent="" /> 中的 parent属性
+			// 合并父类的bean定义
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
-			// 不是抽象类、是单例的且不是懒加载的
+			// 不是抽象类、是单例的且不是懒加载的 非抽象，单例，非懒加载
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
-				// 处理 FactoryBean
+				// 处理 FactoryBean 是否是FactoryBean类型的，是的话要加前缀获取
 				if (isFactoryBean(beanName)) {
-					//在 beanName 前面加上“&” 符号
+					// 如果发现名字是FactoryBean类型的话，就会在名字前加前缀&，然后去获取，获取完了判断是否是FactoryBean类型，
+					// 是的话再判断是否需要理解创建FactoryBean中的对象，如果是的话就直接获取名字，此时的名字是没有&前缀的，
+					// 也就直接获取FactoryBean的getObject()方法创建的对象。当然如果名字不是FactoryBean类型的话，就直接获取对象
+					// 在 beanName 前面加上“&” 符号  获取FactoryBean
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
 						FactoryBean<?> factory = (FactoryBean<?>) bean;
-						// 判断当前 FactoryBean 是否是 SmartFactoryBean 的实现
+						// 判断当前 FactoryBean 是否是 SmartFactoryBean 的实现 是否需要立即创建FactoryBean中的bean
 						boolean isEagerInit;
 						if (System.getSecurityManager() != null && factory instanceof SmartFactoryBean) {
 							isEagerInit = AccessController.doPrivileged(
@@ -909,7 +922,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 
 		// Trigger post-initialization callback for all applicable beans...
-		// 如果bean实现了 SmartInitializingSingleton 接口的，那么在这里得到回调
+		// 如果bean实现了 SmartInitializingSingleton 接口的，那么在这里得到回调 所有单例的还要进行处理器处理
 		for (String beanName : beanNames) {
 			Object singletonInstance = getSingleton(beanName);
 			if (singletonInstance instanceof SmartInitializingSingleton) {
@@ -1228,19 +1241,22 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Nullable
 	public Object resolveDependency(DependencyDescriptor descriptor, @Nullable String requestingBeanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
-
+		// 设置参数名字探索器
 		descriptor.initParameterNameDiscovery(getParameterNameDiscoverer());
 		if (Optional.class == descriptor.getDependencyType()) {
 			return createOptionalDependency(descriptor, requestingBeanName);
 		}
+		// 是对象工厂类型或者对象提供者类型
 		else if (ObjectFactory.class == descriptor.getDependencyType() ||
 				ObjectProvider.class == descriptor.getDependencyType()) {
 			return new DependencyObjectProvider(descriptor, requestingBeanName);
 		}
+		// java扩展的注入类
 		else if (javaxInjectProviderClass == descriptor.getDependencyType()) {
 			return new Jsr330Factory().createDependencyProvider(descriptor, requestingBeanName);
 		}
 		else {
+			// 我们自己只能的类型，先看是否是懒加载，是的话就直接返回，否则要去解析依赖
 			Object result = getAutowireCandidateResolver().getLazyResolutionProxyIfNecessary(
 					descriptor, requestingBeanName);
 			if (result == null) {
@@ -1254,8 +1270,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	public Object doResolveDependency(DependencyDescriptor descriptor, @Nullable String beanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) throws BeansException {
 
+		// 设置注入点，并获得前一个注入点，以便后面可以设置回来
 		InjectionPoint previousInjectionPoint = ConstructorResolver.setCurrentInjectionPoint(descriptor);
 		try {
+			// 解析快捷方式，存在就返回，子类BeanFactiry可以扩展，默认null
 			Object shortcut = descriptor.resolveShortcut(this);
 			if (shortcut != null) {
 				return shortcut;
@@ -1282,22 +1300,28 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 
+			// 是否是多个bean的注入，比如参数类型是集合，map
 			Object multipleBeans = resolveMultipleBeans(descriptor, beanName, autowiredBeanNames, typeConverter);
 			if (multipleBeans != null) {
 				return multipleBeans;
 			}
 
+			// 寻找装配候选对象
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
 			if (matchingBeans.isEmpty()) {
+				// 空的话，又是必须的，才会报异常
 				if (isRequired(descriptor)) {
 					raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
 				}
 				return null;
 			}
 
+			// 自动装配的bean名字
 			String autowiredBeanName;
+			// 装配实例
 			Object instanceCandidate;
 
+			// 有多个
 			if (matchingBeans.size() > 1) {
 				autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
 				if (autowiredBeanName == null) {
@@ -1313,6 +1337,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 				instanceCandidate = matchingBeans.get(autowiredBeanName);
 			}
+			// 只有一个
 			else {
 				// We have exactly one match.
 				Map.Entry<String, Object> entry = matchingBeans.entrySet().iterator().next();
@@ -1323,22 +1348,26 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (autowiredBeanNames != null) {
 				autowiredBeanNames.add(autowiredBeanName);
 			}
+			// 获取装配实例，也要进行getBean过程
 			if (instanceCandidate instanceof Class) {
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}
 			Object result = instanceCandidate;
 			if (result instanceof NullBean) {
+				// 不存在，又是必须
 				if (isRequired(descriptor)) {
 					raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
 				}
 				result = null;
 			}
+			// 类型不匹配
 			if (!ClassUtils.isAssignableValue(type, result)) {
 				throw new BeanNotOfRequiredTypeException(autowiredBeanName, type, instanceCandidate.getClass());
 			}
 			return result;
 		}
 		finally {
+			// 处理完后恢复当前注入点
 			ConstructorResolver.setCurrentInjectionPoint(previousInjectionPoint);
 		}
 	}
@@ -1475,6 +1504,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	}
 
 	/**
+	 * 这里会去寻找我们的容器里面是否有参数的类型，先把参数类型的bean定义中的所有bean名字找出来，创建一个LinkedHashMap集合，
+	 * 然后判断类型是不是内部的类型，是的话也要加进去。然后遍历候选名字集合，把非自引用的可以作为别人依赖的类型添加到集合中，
+	 * 如果集合为空，还要进行处理判断，比如是不是数组类型，集合类型，再做相应处理。
 	 * Find bean instances that match the required type.
 	 * Called during autowiring for the specified bean.
 	 * @param beanName the name of the bean that is about to be wired
@@ -1490,9 +1522,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	protected Map<String, Object> findAutowireCandidates(
 			@Nullable String beanName, Class<?> requiredType, DependencyDescriptor descriptor) {
 
+		// 获取requiredType对应的bean名字数组
 		String[] candidateNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 				this, requiredType, true, descriptor.isEager());
 		Map<String, Object> result = new LinkedHashMap<>(candidateNames.length);
+		// 如果是依赖内部一些类的类型
 		for (Map.Entry<Class<?>, Object> classObjectEntry : this.resolvableDependencies.entrySet()) {
 			Class<?> autowiringType = classObjectEntry.getKey();
 			if (autowiringType.isAssignableFrom(requiredType)) {
@@ -1504,11 +1538,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 		}
+		// 自定义的基本在这里
 		for (String candidate : candidateNames) {
 			if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, descriptor)) {
+				// 非自引用，且可以为其他类做自动装配的，就加入集合
 				addCandidateEntry(result, candidate, descriptor, requiredType);
 			}
 		}
+		// 空的处理
 		if (result.isEmpty()) {
 			boolean multiple = indicatesMultipleBeans(requiredType);
 			// Consider fallback matches if the first pass failed to find anything...

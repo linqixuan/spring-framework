@@ -1,0 +1,9 @@
+InstantiationAwareBeanPostProcessor
+SmartInstantiationAwareBeanPostProcessor
+BeanPostProcessor
+MergedBeanDefinitionPostProcessor
+InitializingBean
+DisposableBean
+Supplier
+
+从实例化之前，实例化之后，注入之前，注入中，初始化前，初始化中，初始化后，销毁前，基本整个生命周期都包含了。

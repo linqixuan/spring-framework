@@ -16,6 +16,12 @@
 
 package org.springframework.beans.factory.annotation;
 
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.lang.Nullable;
+import org.springframework.util.ReflectionUtils;
+
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -25,12 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import org.springframework.beans.MutablePropertyValues;
-import org.springframework.beans.PropertyValues;
-import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.lang.Nullable;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * Internal class for managing injection metadata.
@@ -115,6 +115,7 @@ public class InjectionMetadata {
 		Collection<InjectedElement> elementsToIterate =
 				(checkedElements != null ? checkedElements : this.injectedElements);
 		if (!elementsToIterate.isEmpty()) {
+			// 遍历前面注册的InjectedElement，然后进行注入。
 			for (InjectedElement element : elementsToIterate) {
 				element.inject(target, beanName, pvs);
 			}
@@ -222,18 +223,23 @@ public class InjectionMetadata {
 		protected void inject(Object target, @Nullable String requestingBeanName, @Nullable PropertyValues pvs)
 				throws Throwable {
 
+			// 属性注入
 			if (this.isField) {
 				Field field = (Field) this.member;
 				ReflectionUtils.makeAccessible(field);
 				field.set(target, getResourceToInject(target, requestingBeanName));
 			}
 			else {
+				// 判断是否要略过属性注入，如果是定义的时候给定值了就忽略。
 				if (checkPropertySkipping(pvs)) {
 					return;
 				}
 				try {
+					// 方法注入
 					Method method = (Method) this.member;
 					ReflectionUtils.makeAccessible(method);
+					// getResourceToInject是关键的方法，其实是InjectedElement的抽象方法，子类有不同的实现类，
+					// 比如ResourceElement，EjbRefElement，WebServiceRefElement，当然我们就关注ResourceElement啦，其他自己有兴趣可以看
 					method.invoke(target, getResourceToInject(target, requestingBeanName));
 				}
 				catch (InvocationTargetException ex) {
@@ -264,6 +270,7 @@ public class InjectionMetadata {
 				if (this.pd != null) {
 					if (pvs.contains(this.pd.getName())) {
 						// Explicit value provided as part of the bean definition.
+						// 给定了值了就忽略，直接返回
 						this.skip = true;
 						return true;
 					}

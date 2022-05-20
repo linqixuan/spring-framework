@@ -260,6 +260,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			processConfigBeanDefinitions((BeanDefinitionRegistry) beanFactory);
 		}
 		// 增强配置类
+		// 先把配置bean定义都获取出来，根据ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE属性，
+		// 如果是配置类会设置属性full或者lite。这里要注意，
+		// 如果前面有自定义的BeanDefinitionRegistryPostProcessor扩展被创建出来的话，也会创建配置类，这里就会有个提示
 		enhanceConfigurationClasses(beanFactory);
 		// 添加后置处理器
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
@@ -461,6 +464,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 								annotationMetadata != null && !ConfigurationClassUtils.hasBeanMethods(annotationMetadata));
 					if (!liteConfigurationCandidateWithoutBeanMethods) {
 						try {
+							// bean注解的方法设置类加载器
 							abd.resolveBeanClass(this.beanClassLoader);
 						}
 						catch (Throwable ex) {
@@ -470,11 +474,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 					}
 				}
 			}
+			// 这里就是前面的full 跟 lite的用处了，full可以做增强
 			if (ConfigurationClassUtils.CONFIGURATION_CLASS_FULL.equals(configClassAttr)) {
 				if (!(beanDef instanceof AbstractBeanDefinition)) {
 					throw new BeanDefinitionStoreException("Cannot enhance @Configuration bean definition '" +
 							beanName + "' since it is not stored in an AbstractBeanDefinition subclass");
 				}
+				// 已经存在单例了，就不能增强了
 				else if (logger.isInfoEnabled() && beanFactory.containsSingleton(beanName)) {
 					logger.info("Cannot enhance @Configuration bean definition '" + beanName +
 							"' since its singleton instance has been created too early. The typical cause " +
@@ -484,11 +490,14 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				configBeanDefs.put(beanName, (AbstractBeanDefinition) beanDef);
 			}
 		}
+		// 没有要增强的配置bean直接返回
 		if (configBeanDefs.isEmpty()) {
 			// nothing to enhance -> return immediately
 			return;
 		}
 
+		// 先创建一个配置类增强器ConfigurationClassEnhancer ，会遍历配置bean定义，获取代理的目标类，然后进行代理增强，返回代理类，
+		// 然后把bean定义的BeanClass设置为代理类，这样后面创建的时候就会创建代理类。
 		ConfigurationClassEnhancer enhancer = new ConfigurationClassEnhancer();
 		for (Map.Entry<String, AbstractBeanDefinition> entry : configBeanDefs.entrySet()) {
 			AbstractBeanDefinition beanDef = entry.getValue();
@@ -496,12 +505,16 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			beanDef.setAttribute(AutoProxyUtils.PRESERVE_TARGET_CLASS_ATTRIBUTE, Boolean.TRUE);
 			// Set enhanced subclass of the user-specified bean class
 			Class<?> configClass = beanDef.getBeanClass();
+			// 先判断目标类是不是EnhancedConfiguration类型的，如果是的话说明已经增强过了，因为spring用CGLIB增强的时候会继承目标类，
+			// 实现EnhancedConfiguration接口，其实就是BeanFactoryAware接口。
+			// 如果没有增强过就newEnhancer创建一个增强器，然后createClass创建增强类
 			Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
 			if (configClass != enhancedClass) {
 				if (logger.isTraceEnabled()) {
 					logger.trace(String.format("Replacing bean definition '%s' existing class '%s' with " +
 							"enhanced class '%s'", entry.getKey(), configClass.getName(), enhancedClass.getName()));
 				}
+				// 设置为CGLIB动态代理后的类
 				beanDef.setBeanClass(enhancedClass);
 			}
 		}
@@ -528,6 +541,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		@Override
 		public Object postProcessBeforeInitialization(Object bean, String beanName) {
+			// 如果是ImportAware类型的，就会设置bean的注解信息。
 			if (bean instanceof ImportAware) {
 				ImportRegistry ir = this.beanFactory.getBean(IMPORT_REGISTRY_BEAN_NAME, ImportRegistry.class);
 				AnnotationMetadata importingClass = ir.getImportingClassFor(ClassUtils.getUserClass(bean).getName());

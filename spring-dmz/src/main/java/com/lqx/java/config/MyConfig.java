@@ -1,10 +1,10 @@
 package com.lqx.java.config;
 
-import com.lqx.java.config.postprocessor.TestBeanDefinitionRegistryPostProcessorPriorityOrdered;
-import com.lqx.java.config.registrar.MyImportBeanDefinitionRegistrar;
+import com.lqx.java.config.dao.UserDao;
+import com.lqx.java.config.dao.UserDaoImple;
+import com.lqx.java.config.postprocessor.TestJDKProxyInstantiationAwareBeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 /**
  * @author linqx
@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import;
  * @description TODO
  * @date 2022/5/18 8:04
  */
-@Import(MyImportBeanDefinitionRegistrar.class)
+//@Import(MyImportBeanDefinitionRegistrar.class)
 @Configuration
 public class MyConfig {
 
@@ -28,8 +28,23 @@ public class MyConfig {
 //	}
 
 	@Bean
-	public static TestBeanDefinitionRegistryPostProcessorPriorityOrdered myRegistrar(){
-		return  new TestBeanDefinitionRegistryPostProcessorPriorityOrdered();
+	public UserDao userDao() {
+		return new UserDaoImple();
 	}
+
+	@Bean
+	public TestJDKProxyInstantiationAwareBeanPostProcessor testJDKProxyInstantiationAwareBeanPostProcessor() {
+		return new TestJDKProxyInstantiationAwareBeanPostProcessor();
+	}
+
+//	@Bean
+//	public TestInstantiationAwareBeanPostProcessor testInstantiationAwareBeanPostProcessor() {
+//		return new TestInstantiationAwareBeanPostProcessor();
+//	}
+
+//	@Bean
+//	public static TestBeanDefinitionRegistryPostProcessorPriorityOrdered myRegistrar(){
+//		return  new TestBeanDefinitionRegistryPostProcessorPriorityOrdered();
+//	}
 
 }

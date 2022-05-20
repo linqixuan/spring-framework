@@ -7,7 +7,7 @@ package com.lqx.java.config.dao;
  * @description TODO
  * @date 2022/5/18 17:04
  */
-public class UserDaoImple implements UserDao {
+public class UserDaoImple2 implements UserDao {
 	@Override
 	public void getUser() {
 

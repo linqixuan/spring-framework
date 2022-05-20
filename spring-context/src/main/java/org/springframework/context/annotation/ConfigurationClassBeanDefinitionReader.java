@@ -322,6 +322,11 @@ class ConfigurationClassBeanDefinitionReader {
 	}
 
 	protected boolean isOverriddenByExistingDefinition(BeanMethod beanMethod, String beanName) {
+
+		// 主要的判断代码就是ConfigurationClassBeanDefinitionReader的isOverriddenByExistingDefinition，
+		// 其实是有个判断逻辑，首先是判断已存在的bean定义是不是和bean注册方法同一个配置类的重载方法，因为同名嘛，如果是的话就不覆盖，
+		// 且设置工厂方法不唯一，否则要覆盖，如果不是，就看是不是component scan扫描进来的bean定义，是的话要覆盖，如果不是就看是不是内部的，
+		// 如果是也覆盖，这么说我们可以覆盖spring内部的处理器
 		if (!this.registry.containsBeanDefinition(beanName)) {
 			return false;
 		}
@@ -331,6 +336,7 @@ class ConfigurationClassBeanDefinitionReader {
 		// -> allow the current bean method to override, since both are at second-pass level.
 		// However, if the bean method is an overloaded case on the same configuration class,
 		// preserve the existing bean definition.
+		// 如果是ConfigurationClassBeanDefinition类型的话，且是同一个配置类的重载方法，就保存现有
 		if (existingBeanDef instanceof ConfigurationClassBeanDefinition) {
 			ConfigurationClassBeanDefinition ccbd = (ConfigurationClassBeanDefinition) existingBeanDef;
 			if (ccbd.getMetadata().getClassName().equals(
@@ -338,21 +344,25 @@ class ConfigurationClassBeanDefinitionReader {
 				if (ccbd.getFactoryMethodMetadata().getMethodName().equals(ccbd.getFactoryMethodName())) {
 					ccbd.setNonUniqueFactoryMethodName(ccbd.getFactoryMethodMetadata().getMethodName());
 				}
+				// 不覆盖
 				return true;
 			}
 			else {
+				// 覆盖
 				return false;
 			}
 		}
 
 		// A bean definition resulting from a component scan can be silently overridden
 		// by an @Bean method, as of 4.2...
+		// 如果是component scan， 覆盖现有的
 		if (existingBeanDef instanceof ScannedGenericBeanDefinition) {
 			return false;
 		}
 
 		// Has the existing bean definition bean marked as a framework-generated bean?
 		// -> allow the current bean method to override it, since it is application-level
+		// 如果是框架内部的，覆盖现有的
 		if (existingBeanDef.getRole() > BeanDefinition.ROLE_APPLICATION) {
 			return false;
 		}
@@ -369,6 +379,8 @@ class ConfigurationClassBeanDefinitionReader {
 					"already exists. This top-level bean definition is considered as an override.",
 					beanMethod, beanName));
 		}
+
+		// 不覆盖
 		return true;
 	}
 

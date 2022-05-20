@@ -60,7 +60,7 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 	@Override
 	public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
 		// Don't override the class with CGLIB if no overrides.
-		// 如果不存在方法覆写，那就使用 java 反射进行实例化，否则使用 CGLIB,
+		// 如果不存在方法覆写，那就使用 java 反射进行实例化，否则使用 CGLIB, 无lookup重载的方法
 		if (!bd.hasMethodOverrides()) {
 			Constructor<?> constructorToUse;
 			synchronized (bd.constructorArgumentLock) {
@@ -90,7 +90,7 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 		}
 		else {
 			// Must generate CGLIB subclass.
-			// 存在方法覆写，利用 CGLIB 来完成实例化，需要依赖于 CGLIB 生成子类，这里就不展开了
+			// 存在方法覆写，利用 CGLIB 来完成实例化，需要依赖于 CGLIB 生成子类，有lookup重载的话要用CGLIB动态代理了
 			return instantiateWithMethodInjection(bd, beanName, owner);
 		}
 	}
@@ -140,6 +140,9 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 	public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
 			@Nullable Object factoryBean, final Method factoryMethod, Object... args) {
 
+		// 其实默认的实例化策略是CglibSubclassingInstantiationStrategy，就是可以用CGLIB做动态代理，但是仅限于方法注入的形式，
+		// 所以这里是无参工厂方法还是调用父类SimpleInstantiationStrategy的实现。
+		// 其实就是调用工厂实例的工厂方法，传入参数，只是参数是个空数组EMPTY_ARGS，返回对象
 		try {
 			if (System.getSecurityManager() != null) {
 				AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
@@ -148,12 +151,15 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 				});
 			}
 			else {
+				// 设置factoryMethod可访问
 				ReflectionUtils.makeAccessible(factoryMethod);
 			}
-
+			// 获取前面存在的线程本地的FactoryMethod
 			Method priorInvokedFactoryMethod = currentlyInvokedFactoryMethod.get();
 			try {
+				// 设置新的
 				currentlyInvokedFactoryMethod.set(factoryMethod);
+				// 调用工厂方法
 				Object result = factoryMethod.invoke(factoryBean, args);
 				if (result == null) {
 					result = new NullBean();
@@ -161,10 +167,12 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 				return result;
 			}
 			finally {
+				// 如果线程本地存在，就设置回老的
 				if (priorInvokedFactoryMethod != null) {
 					currentlyInvokedFactoryMethod.set(priorInvokedFactoryMethod);
 				}
 				else {
+					// 否则就删除，等于没设置
 					currentlyInvokedFactoryMethod.remove();
 				}
 			}
