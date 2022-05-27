@@ -269,6 +269,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 				this.targetSourcedBeans.add(beanName);
 			}
 			Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
+			// 进行代理工厂的创建，然后判断是否需要设置proxyTargetClass，以便于后面决定是不是要进行JDK动态代理还是CGLIB的动态代理，
+			// 然后把通知器advisors包装下，加入到代理工厂，获取代理对象。
 			Object proxy = createProxy(beanClass, beanName, specificInterceptors, targetSource);
 			this.proxyTypes.put(cacheKey, proxy.getClass());
 			return proxy;
@@ -301,6 +303,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
 		if (bean != null) {
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
+			// earlyProxyReferences  为了解决单例的循环依赖，在实例化bean之后，需要把一个工厂方法加到singletonFactories集合里
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
 				// 往下看
 				return wrapIfNecessary(bean, beanName, cacheKey);
@@ -358,6 +361,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		// 如果获取到了增强则需要针对增强创建代理
 		if (specificInterceptors != DO_NOT_PROXY) {
+			// 要代理的就添加true
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
 			// 创建代理
 			Object proxy = createProxy(
@@ -457,10 +461,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	protected Object createProxy(Class<?> beanClass, @Nullable String beanName,
 			@Nullable Object[] specificInterceptors, TargetSource targetSource) {
 
+		// 给bean定义设置暴露属性
 		if (this.beanFactory instanceof ConfigurableListableBeanFactory) {
 			AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
 		}
 
+		// 创建代理工厂
 		ProxyFactory proxyFactory = new ProxyFactory();
 		// 使用proxyFactory对象copy当前类中的相关属性
 		proxyFactory.copyFrom(this);
@@ -477,7 +483,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		}
 		else {
 			// No proxyTargetClass flag enforced, let's apply our default checks...
-			// 如果配置开启使用则直接设置开启
+			// 如果配置开启使用则直接设置开启 //查看是否有PRESERVE_TARGET_CLASS_ATTRIBUTE属性，有的话就要设置true
 			if (shouldProxyTargetClass(beanClass, beanName)) {
 				proxyFactory.setProxyTargetClass(true);
 			}
@@ -488,7 +494,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			}
 		}
 
-		// 添加所有增强
+		// 构建通知器，把通用的拦截器也加进来，有些可能会要进行包装
 		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
 		proxyFactory.addAdvisors(advisors);
 		// 设置要代理的类
@@ -498,6 +504,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 		proxyFactory.setFrozen(this.freezeProxy);
 		if (advisorsPreFiltered()) {
+			// 已经过滤处理了
 			proxyFactory.setPreFiltered(true);
 		}
 		// 使用代理工厂获取代理对象

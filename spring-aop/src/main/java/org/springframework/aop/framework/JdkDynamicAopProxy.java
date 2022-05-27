@@ -117,8 +117,10 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		if (logger.isTraceEnabled()) {
 			logger.trace("Creating JDK dynamic proxy: " + this.advised.getTargetSource());
 		}
+		// 增加一些其他的接口SpringProxy，DecoratingProxy，Advised
 		Class<?>[] proxiedInterfaces = AopProxyUtils.completeProxiedInterfaces(this.advised, true);
 		findDefinedEqualsAndHashCodeMethods(proxiedInterfaces);
+		//生成代理
 		return Proxy.newProxyInstance(classLoader, proxiedInterfaces, this);
 	}
 

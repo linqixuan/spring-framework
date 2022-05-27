@@ -128,7 +128,9 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 				new LazySingletonAspectInstanceFactoryDecorator(aspectInstanceFactory);
 
 		List<Advisor> advisors = new ArrayList<>();
-		// 获取这个类所有的增强方法
+		// 获取这个类所有的增强方法 获取Pointcut注解的方法
+		// 这里会后的所有不包含Pointcut注解的方法，让然后进行排序，
+		// 根据这个注解顺序Around.class, Before.class, After.class, AfterReturning.class, AfterThrowing.class，然后才是普通方法。
 		for (Method method : getAdvisorMethods(aspectClass)) {
 			// Prior to Spring Framework 5.2.7, advisors.size() was supplied as the declarationOrderInAspect
 			// to getAdvisor(...) to represent the "current position" in the declared methods list.
@@ -138,7 +140,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 			// discovered via reflection in order to support reliable advice ordering across JVM launches.
 			// Specifically, a value of 0 aligns with the default value used in
 			// AspectJPrecedenceComparator.getAspectDeclarationOrder(Advisor).
-			// 生成增强实例
+			// 生成增强实例 根据获取到切面对象里的方法，解析这些方法的注解来进行创建Advisor通知器，内部会创建Advice通知，解析切点。
 			Advisor advisor = getAdvisor(method, lazySingletonAspectInstanceFactory, 0, aspectName);
 			if (advisor != null) {
 				advisors.add(advisor);

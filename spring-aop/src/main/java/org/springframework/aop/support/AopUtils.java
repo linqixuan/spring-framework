@@ -239,12 +239,15 @@ public abstract class AopUtils {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
+		//存放要代理的类，以及他的接口
 		Set<Class<?>> classes = new LinkedHashSet<>();
+		//不是JDK的代理类
 		if (!Proxy.isProxyClass(targetClass)) {
 			classes.add(ClassUtils.getUserClass(targetClass));
 		}
 		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
+		//查看方法是否是切点表达式匹配的
 		for (Class<?> clazz : classes) {
 			// 获取当前类的所有方法
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);

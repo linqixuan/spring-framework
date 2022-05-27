@@ -93,9 +93,10 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 					// 通知集合
 					List<Advisor> advisors = new ArrayList<>();
 					aspectNames = new ArrayList<>();
-					// 获取所有Bean名称
+					// 获取所有Bean名称 //寻找所有object类型的bean定义名字
 					String[] beanNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 							this.beanFactory, Object.class, true, false);
+					// 遍历获取有Aspect注解的加入到aspectNames列表
 					for (String beanName : beanNames) {
 						// 判断是否符合条件，比如说有时会排除一些类，不让这些类注入进Spring
 						if (!isEligibleBean(beanName)) {
@@ -103,7 +104,7 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 						}
 						// We must be careful not to instantiate beans eagerly as in this case they
 						// would be cached by the Spring container but would not have been weaved.
-						// 获取bean的类型
+						// 获取bean的类型 如果不存在，可能已经被代理过了
 						Class<?> beanType = this.beanFactory.getType(beanName, false);
 						if (beanType == null) {
 							continue;
@@ -111,11 +112,16 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 						// 判断Bean的Class上是否标识@Aspect注解
 						if (this.advisorFactory.isAspect(beanType)) {
 							aspectNames.add(beanName);
+							// 创建切面元数据
 							AspectMetadata amd = new AspectMetadata(beanType, beanName);
+							// 单例
 							if (amd.getAjType().getPerClause().getKind() == PerClauseKind.SINGLETON) {
+								// 创建实例工厂
 								MetadataAwareAspectInstanceFactory factory =
 										new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
 								// 重点的重点
+								// ReflectiveAspectJAdvisorFactory的getAdvisors
+								// 首先获取切面类型，然后获取除Pointcut注解的所有方法，根据方法注解来创建Advisor通知器。
 								List<Advisor> classAdvisors = this.advisorFactory.getAdvisors(factory);
 								if (this.beanFactory.isSingleton(beanName)) {
 									// 将解析的Bean名称及类上的增强缓存起来,每个Bean只解析一次
