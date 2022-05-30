@@ -1279,6 +1279,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				return shortcut;
 			}
 
+			// 获取属性类型
 			Class<?> type = descriptor.getDependencyType();
 			Object value = getAutowireCandidateResolver().getSuggestedValue(descriptor);
 			if (value != null) {
@@ -1323,6 +1324,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 			// 有多个
 			if (matchingBeans.size() > 1) {
+				// 推断Primary
 				autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
 				if (autowiredBeanName == null) {
 					if (isRequired(descriptor) || !indicatesMultipleBeans(type)) {
