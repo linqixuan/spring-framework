@@ -16,11 +16,11 @@
 
 package org.springframework.jdbc.datasource;
 
+import org.springframework.lang.Nullable;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
-
-import org.springframework.lang.Nullable;
 
 /**
  * Abstract base class for JDBC {@link javax.sql.DataSource} implementations
@@ -202,6 +202,7 @@ public abstract class AbstractDriverBasedDataSource extends AbstractDataSource {
 			mergedProps.setProperty("password", password);
 		}
 
+		// 获取连接
 		Connection con = getConnectionFromDriver(mergedProps);
 		if (this.catalog != null) {
 			con.setCatalog(this.catalog);

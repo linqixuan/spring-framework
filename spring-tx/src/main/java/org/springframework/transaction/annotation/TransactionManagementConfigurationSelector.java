@@ -45,6 +45,9 @@ public class TransactionManagementConfigurationSelector extends AdviceModeImport
 	 */
 	@Override
 	protected String[] selectImports(AdviceMode adviceMode) {
+
+		// AutoProxyRegistrar.registerBeanDefinitions 会注册AOP处理器InfrastructureAdvisorAutoProxyCreator
+		// ProxyTransactionManagementConfiguration注册事务需要用的一些类，而且Role=ROLE_INFRASTRUCTURE都是属于内部级别的。
 		switch (adviceMode) {
 			case PROXY:
 				return new String[] {AutoProxyRegistrar.class.getName(),
