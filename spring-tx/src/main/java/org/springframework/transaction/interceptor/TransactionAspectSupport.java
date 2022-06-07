@@ -605,6 +605,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			@Nullable TransactionAttribute txAttr, String joinpointIdentification,
 			@Nullable TransactionStatus status) {
 
+		//创建事务信息
 		TransactionInfo txInfo = new TransactionInfo(tm, txAttr, joinpointIdentification);
 		if (txAttr != null) {
 			// We need a transaction for this method...
@@ -612,6 +613,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				logger.trace("Getting transaction for [" + txInfo.getJoinpointIdentification() + "]");
 			}
 			// The transaction manager will flag an error if an incompatible tx already exists.
+			//设置新事务状态
 			txInfo.newTransactionStatus(status);
 		}
 		else {
@@ -626,6 +628,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		// We always bind the TransactionInfo to the thread, even if we didn't create
 		// a new transaction here. This guarantees that the TransactionInfo stack
 		// will be managed correctly even if no transaction was created by this aspect.
+		//事务信息绑定到当前线程
 		txInfo.bindToThread();
 		return txInfo;
 	}
@@ -993,6 +996,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 							"] after exception: " + ex);
 				}
 				if (txInfo.transactionAttribute != null && txInfo.transactionAttribute.rollbackOn(ex)) {
+					//进行回滚
 					return txInfo.getTransactionManager().rollback(txInfo.getReactiveTransaction()).onErrorMap(ex2 -> {
 								logger.error("Application exception overridden by rollback exception", ex);
 								if (ex2 instanceof TransactionSystemException) {
